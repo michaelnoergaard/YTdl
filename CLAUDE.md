@@ -8,22 +8,25 @@ A YouTube downloader utility built with Python that supports both video download
 
 ## Architecture
 
-**ytdl.py** is the main entry point:
-- `main()`: Entry point with URL validation, user prompts, and exit codes
-- `download_audio_from_youtube(url)`: Downloads and converts to MP3 at 192kbps
-- `download_video_from_youtube(url)`: Downloads best quality video with audio merged
-- `get_user_choice()`: Interactive CLI prompt for download type selection
-- `get_youtube_url()`: URL input with validation
-- `is_valid_youtube_url(url)`: Validates YouTube URL patterns
+The package lives in `src/ytdl/` with three modules:
+
+- **`validation.py`**: `is_valid_youtube_url(url)` — regex-based YouTube URL validation
+- **`downloader.py`**: `download_audio(url)`, `download_video(url)` — yt-dlp wrapper functions. Downloads best quality video (merged) or extracts audio to MP3 at 192kbps. `_progress_hook()` displays live download progress.
+- **`cli.py`**: `main()`, `get_youtube_url()`, `get_user_choice()` — interactive CLI prompts and orchestration. Entry point for both `ytdl` command and `python -m ytdl`.
 
 Files are saved with the video title as filename. FFmpeg handles audio conversion and video merging.
 
 ## Development Commands
 
 ```bash
-uv sync                    # Install dependencies
-uv run python ytdl.py      # Run the application
-uv add <package>           # Add a new dependency
+uv sync                          # Install dependencies (including dev tools)
+uv run python -m ytdl            # Run the application
+uv run pytest -v                 # Run tests
+uv run ruff check src/ tests/    # Lint
+uv run ruff format src/ tests/   # Format
+uv run mypy src/                 # Type check
+uv run pre-commit run --all-files  # Run all pre-commit hooks
+uv add <package>                 # Add a new dependency
 ```
 
 ## System Dependencies

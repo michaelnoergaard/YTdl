@@ -1,17 +1,13 @@
-# Python-generated files
 __pycache__/
-*.py[oc]
-build/
+*.py[cod]
+*.egg-info/
 dist/
-wheels/
-*.egg-info
-
-# Virtual environments
-.venv
-
-# Downloaded media
+build/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 *.mp3
 *.mp4
-*.m4a
+*.mkv
 *.webm
-*.opus
+.venv/
