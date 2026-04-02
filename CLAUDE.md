@@ -20,7 +20,7 @@ Files are saved with the video title as filename. FFmpeg handles audio conversio
 
 ```bash
 uv sync                          # Install dependencies (including dev tools)
-uv run python -m ytdl            # Run the application
+uv run ytdl                      # Run the application
 uv run pytest -v                 # Run tests
 uv run ruff check src/ tests/    # Lint
 uv run ruff format src/ tests/   # Format

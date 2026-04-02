@@ -1,24 +1,32 @@
 """Tests for CLI interaction."""
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-from ytdl.cli import get_user_choice, get_youtube_url, main
+from ytdl.cli import get_user_choices, get_youtube_url, main
 
 
-class TestGetUserChoice:
-    """Tests for get_user_choice()."""
+class TestGetUserChoices:
+    """Tests for get_user_choices()."""
 
-    @patch("builtins.input", return_value="1")
-    def test_choice_1(self, _mock: object) -> None:
-        assert get_user_choice() == "1"
+    @patch("ytdl.cli.TerminalMenu")
+    def test_single_selection(self, mock_menu_cls: MagicMock) -> None:
+        mock_menu_cls.return_value.show.return_value = 0
+        assert get_user_choices() == [0]
 
-    @patch("builtins.input", return_value="2")
-    def test_choice_2(self, _mock: object) -> None:
-        assert get_user_choice() == "2"
+    @patch("ytdl.cli.TerminalMenu")
+    def test_multiple_selections(self, mock_menu_cls: MagicMock) -> None:
+        mock_menu_cls.return_value.show.return_value = (0, 2)
+        assert get_user_choices() == [0, 2]
 
-    @patch("builtins.input", side_effect=["3", "abc", "1"])
-    def test_rejects_invalid_then_accepts(self, _mock: object) -> None:
-        assert get_user_choice() == "1"
+    @patch("ytdl.cli.TerminalMenu")
+    def test_no_selection_returns_empty(self, mock_menu_cls: MagicMock) -> None:
+        mock_menu_cls.return_value.show.return_value = None
+        assert get_user_choices() == []
+
+    @patch("ytdl.cli.TerminalMenu")
+    def test_all_three_selected(self, mock_menu_cls: MagicMock) -> None:
+        mock_menu_cls.return_value.show.return_value = (0, 1, 2)
+        assert get_user_choices() == [0, 1, 2]
 
 
 class TestGetYoutubeUrl:
@@ -40,16 +48,45 @@ class TestGetYoutubeUrl:
 class TestMain:
     """Tests for main()."""
 
-    @patch("ytdl.cli.download_video", return_value=True)
-    @patch("ytdl.cli.get_user_choice", return_value="1")
+    @patch("ytdl.cli.OPTIONS", [("Download video", MagicMock(return_value=True))])
+    @patch("ytdl.cli.get_user_choices", return_value=[0])
     @patch("ytdl.cli.get_youtube_url", return_value="https://youtu.be/test")
     def test_success_returns_0(self, *_mocks: object) -> None:
         assert main() == 0
 
-    @patch("ytdl.cli.download_audio", return_value=False)
-    @patch("ytdl.cli.get_user_choice", return_value="2")
+    @patch("ytdl.cli.OPTIONS", [("Extract audio", MagicMock(return_value=False))])
+    @patch("ytdl.cli.get_user_choices", return_value=[0])
     @patch("ytdl.cli.get_youtube_url", return_value="https://youtu.be/test")
     def test_failure_returns_1(self, *_mocks: object) -> None:
+        assert main() == 1
+
+    @patch(
+        "ytdl.cli.OPTIONS",
+        [
+            ("Download video", MagicMock(return_value=True)),
+            ("Extract audio", MagicMock(return_value=True)),
+        ],
+    )
+    @patch("ytdl.cli.get_user_choices", return_value=[0, 1])
+    @patch("ytdl.cli.get_youtube_url", return_value="https://youtu.be/test")
+    def test_multiple_choices_all_succeed(self, *_mocks: object) -> None:
+        assert main() == 0
+
+    @patch(
+        "ytdl.cli.OPTIONS",
+        [
+            ("Download video", MagicMock(return_value=True)),
+            ("Extract audio", MagicMock(return_value=False)),
+        ],
+    )
+    @patch("ytdl.cli.get_user_choices", return_value=[0, 1])
+    @patch("ytdl.cli.get_youtube_url", return_value="https://youtu.be/test")
+    def test_partial_failure_returns_1(self, *_mocks: object) -> None:
+        assert main() == 1
+
+    @patch("ytdl.cli.get_user_choices", return_value=[])
+    @patch("ytdl.cli.get_youtube_url", return_value="https://youtu.be/test")
+    def test_no_selection_returns_1(self, *_mocks: object) -> None:
         assert main() == 1
 
     @patch("ytdl.cli.get_youtube_url", side_effect=KeyboardInterrupt)

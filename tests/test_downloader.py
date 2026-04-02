@@ -4,7 +4,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from ytdl.downloader import _progress_hook, download_audio, download_video
+from ytdl.downloader import (
+    _progress_hook,
+    _strip_timestamps,
+    download_audio,
+    download_video,
+)
 
 
 class TestDownloadAudio:
@@ -25,6 +30,7 @@ class TestDownloadAudio:
         download_audio("https://youtu.be/test")
         opts = mock_ydl_class.call_args[0][0]
         assert opts["format"] == "bestaudio/best"
+        assert "downloads" in opts["outtmpl"]
         pp = opts["postprocessors"][0]
         assert pp["key"] == "FFmpegExtractAudio"
         assert pp["preferredcodec"] == "mp3"
@@ -67,6 +73,7 @@ class TestDownloadVideo:
         download_video("https://youtu.be/test")
         opts = mock_ydl_class.call_args[0][0]
         assert opts["format"] == "bv+ba/b"
+        assert "downloads" in opts["outtmpl"]
 
 
 class TestProgressHook:
@@ -88,3 +95,35 @@ class TestProgressHook:
         _progress_hook({"status": "finished"})
         captured = capsys.readouterr()
         assert "complete" in captured.out.lower()
+
+
+class TestStripTimestamps:
+    """Tests for _strip_timestamps()."""
+
+    def test_strips_vtt_format(self) -> None:
+        vtt = (
+            "WEBVTT\nKind: captions\nLanguage: en\n\n"
+            "00:00:00.000 --> 00:00:02.000\n"
+            "Hello world\n\n"
+            "00:00:02.000 --> 00:00:04.000\n"
+            "This is a test\n\n"
+        )
+        result = _strip_timestamps(vtt)
+        assert "Hello world" in result
+        assert "This is a test" in result
+        assert "-->" not in result
+        assert "WEBVTT" not in result
+
+    def test_removes_duplicate_lines(self) -> None:
+        vtt = (
+            "WEBVTT\n\n"
+            "00:00:00.000 --> 00:00:02.000\n"
+            "Same line\n\n"
+            "00:00:02.000 --> 00:00:04.000\n"
+            "Same line\n\n"
+            "00:00:04.000 --> 00:00:06.000\n"
+            "Different line\n\n"
+        )
+        result = _strip_timestamps(vtt)
+        assert result.count("Same line") == 1
+        assert "Different line" in result

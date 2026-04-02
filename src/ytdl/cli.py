@@ -1,7 +1,15 @@
 """Interactive CLI for YouTube downloads."""
 
-from ytdl.downloader import download_audio, download_video
+from simple_term_menu import TerminalMenu
+
+from ytdl.downloader import download_audio, download_transcript, download_video
 from ytdl.validation import is_valid_youtube_url
+
+OPTIONS = [
+    ("Download video", download_video),
+    ("Extract audio to MP3", download_audio),
+    ("Download transcript", download_transcript),
+]
 
 
 def get_youtube_url() -> str:
@@ -19,37 +27,46 @@ def get_youtube_url() -> str:
         return url
 
 
-def get_user_choice() -> str:
-    """Prompt user for download type choice."""
-    print("\nChoose download option:")
-    print("1. Download video")
-    print("2. Extract audio to MP3")
+def get_user_choices() -> list[int]:
+    """Show interactive multi-select menu. Returns selected indices."""
+    labels = [label for label, _ in OPTIONS]
+    menu = TerminalMenu(
+        labels,
+        title="Select download options:",
+        multi_select=True,
+        show_multi_select_hint=True,
+    )
+    selected = menu.show()
 
-    while True:
-        choice = input("Enter your choice (1 or 2): ").strip()
-        if choice in ("1", "2"):
-            return choice
-        print("Invalid choice. Please enter 1 or 2.")
+    if selected is None:
+        return []
+    if isinstance(selected, int):
+        return [selected]
+    return list(selected)
 
 
 def main() -> int:
     """Main entry point. Returns exit code."""
     try:
         url = get_youtube_url()
-        choice = get_user_choice()
+        choices = get_user_choices()
 
-        if choice == "1":
-            print("\nDownloading video...")
-            success = download_video(url)
-        else:
-            print("\nExtracting audio to MP3...")
-            success = download_audio(url)
+        if not choices:
+            print("No options selected.")
+            return 1
 
-        if success:
+        all_success = True
+        for idx in choices:
+            label, download_fn = OPTIONS[idx]
+            print(f"\n{label}...")
+            if not download_fn(url):
+                all_success = False
+
+        if all_success:
             print("\nDone!")
             return 0
         else:
-            print("\nDownload failed.")
+            print("\nSome downloads failed.")
             return 1
     except (KeyboardInterrupt, EOFError):
         print("\nAborted.")
