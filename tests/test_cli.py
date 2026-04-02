@@ -2,8 +2,6 @@
 
 from unittest.mock import patch
 
-import pytest
-
 from ytdl.cli import get_user_choice, get_youtube_url, main
 
 

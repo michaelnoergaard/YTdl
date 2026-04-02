@@ -73,11 +73,13 @@ class TestProgressHook:
     """Tests for _progress_hook()."""
 
     def test_downloading_status(self, capsys: pytest.CaptureFixture[str]) -> None:
-        _progress_hook({
-            "status": "downloading",
-            "_percent_str": "50.0%",
-            "_speed_str": "1.5MiB/s",
-        })
+        _progress_hook(
+            {
+                "status": "downloading",
+                "_percent_str": "50.0%",
+                "_speed_str": "1.5MiB/s",
+            }
+        )
         captured = capsys.readouterr()
         assert "50.0%" in captured.out
         assert "1.5MiB/s" in captured.out
