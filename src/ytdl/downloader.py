@@ -1,5 +1,6 @@
 """YouTube download functions using yt-dlp."""
 
+import re
 from pathlib import Path
 
 import yt_dlp
@@ -31,11 +32,18 @@ def download_audio(url: str) -> bool:
             info = ydl.extract_info(url, download=True)
             if info is None:
                 return False
-            # Rename from temp name to clean name
+            # The temp suffix keeps this download from colliding with a video
+            # download of the same title; rename back to the clean name here.
             tmp_path = Path(ydl.prepare_filename(info)).with_suffix(".mp3")
             final_path = tmp_path.with_name(tmp_path.name.replace("_audio_tmp", ""))
             if tmp_path.exists():
                 tmp_path.rename(final_path)
+                print(f"\n  Audio saved to: {final_path}")
+            else:
+                print(
+                    f"\n  Warning: expected {tmp_path.name} after conversion but it "
+                    "was not found; the file may still have its temporary name."
+                )
         return True
     except yt_dlp.utils.DownloadError as e:
         print(f"\nError downloading: {e}")
@@ -119,8 +127,6 @@ def download_transcript(url: str) -> bool:
 
 def _strip_timestamps(vtt_text: str) -> str:
     """Strip VTT/SRT formatting to produce clean plain text."""
-    import re
-
     # Remove VTT header
     text = re.sub(r"WEBVTT\n.*?\n\n", "", vtt_text, count=1, flags=re.DOTALL)
     # Remove timestamp lines (00:00:00.000 --> 00:00:00.000)
