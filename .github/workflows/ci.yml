@@ -8,16 +8,18 @@ on:
 
 jobs:
   check:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: [self-hosted, homelab]
 
     steps:
       - uses: actions/checkout@v4
 
+      # Pinned: no floating major tags after v8. A floating tag is what kept
+      # another repo's main unbuildable for six weeks this month.
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
-
-      - name: Set up Python
-        run: uv python install 3.13
+        uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: "3.13"
+          enable-cache: true
 
       - name: Install dependencies
         run: uv sync
